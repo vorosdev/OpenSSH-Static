@@ -11,14 +11,22 @@ readonly OPENSSH_VERSION="V_9_9_P1"
 #------------------------------------------------------------------------------
 # Compiler and Directories
 #------------------------------------------------------------------------------
-readonly CC="x86_64-linux-musl-gcc"
-export CC  
+readonly CC="i686-linux-musl-gcc" # Nota: en caso de usar compilar para 32 bits 
+export CC  			  # se debe añadir la flag linux-generic32 en el
+				  # ./Configure de OpenSSL
+ 
 
 readonly prefix="/opt/openssh"          # Final installation directory for OpenSSH
 readonly top="$(pwd)"                   # Root directory where everything is downloaded and built
 readonly root="$top/root"               # Temporary installation directory
 readonly build_dir="$top/build"         # Build directory
 readonly dist="$top/dist"               # Download directory
+
+ls $prefix &>/dev/null || sudo mkdir -p $prefix
+
+perm_dir() {
+   sudo chown $USER -R $prefix
+}
 
 #------------------------------------------------------------------------------
 # Zlib Configuration
@@ -29,9 +37,10 @@ readonly ZLIB_URL="https://zlib.net/${ZLIB_TGZ}"
 readonly ZLIB_CHECKFILE="lib/libz.a"
 
 ZLIB_build() {
-    ./configure --prefix="$prefix" --static
+    ./configure --prefix="$prefix" --static 
     make -j"$(nproc)"
-    make install
+    sudo make install
+    perm_dir
 }
 
 #------------------------------------------------------------------------------
@@ -43,9 +52,10 @@ readonly OPENSSL_URL="https://www.openssl.org/source/${OPENSSL_TGZ}"
 readonly OPENSSL_CHECKFILE="lib/libcrypto.a"
 
 OPENSSL_build() {
-    ./Configure no-shared no-dso -static --prefix="$prefix" --openssldir="$prefix/ssl"
+    ./Configure no-shared no-dso -static --prefix="$prefix" --openssldir="$prefix/ssl" # linux-generic32
     make -j"$(nproc)"
-    make install
+    sudo make install#_sw
+    perm_dir
 }
 
 #------------------------------------------------------------------------------
@@ -59,12 +69,13 @@ readonly OPENSSH_CHECKFILE="sbin/sshd"
 OPENSSH_build() {
     autoreconf
     CFLAGS="-I$prefix/include" \
-    LDFLAGS="-L$prefix/lib -L$prefix/lib64 -static" \
+    LDFLAGS="-L$prefix/lib -L$prefix/lib64 -static"  \
     ./configure --prefix="$prefix" --exec-prefix="$prefix" --sysconfdir="$prefix/etc" \
                 --with-privsep-user=nobody --with-ssl-dir="$prefix" --with-zlib="$prefix" \
-                --with-default-path="$prefix/bin" --without-pam --disable-libsystemd
+                --with-default-path="$prefix/bin" --without-pam --disable-libsystemd 
     make -j"$(nproc)"
-    make install
+    sudo make install
+    perm_dir
 }
 
 #------------------------------------------------------------------------------
