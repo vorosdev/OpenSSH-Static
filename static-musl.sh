@@ -11,9 +11,12 @@ readonly OPENSSH_VERSION="V_9_9_P1"
 #------------------------------------------------------------------------------
 # Compiler and Directories
 #------------------------------------------------------------------------------
-readonly CC="i686-linux-musl-gcc" # Nota: en caso de usar compilar para 32 bits 
-export CC  			  # se debe añadir la flag linux-generic32 en el
-				  # ./Configure de OpenSSL
+export PATH=$PATH:$(echo /opt/musl*/bin)
+
+
+readonly CC="x86_64-linux-musl-gcc"     # Nota: en caso de usar compilar para 32 bits 
+export CC  			        # se debe añadir la flag linux-generic32 en el
+				        # ./Configure de OpenSSL
  
 
 readonly prefix="/opt/openssh"          # Final installation directory for OpenSSH
@@ -72,7 +75,7 @@ OPENSSH_build() {
     LDFLAGS="-L$prefix/lib -L$prefix/lib64 -static"  \
     ./configure --prefix="$prefix" --exec-prefix="$prefix" --sysconfdir="$prefix/etc" \
                 --with-privsep-user=nobody --with-ssl-dir="$prefix" --with-zlib="$prefix" \
-                --with-default-path="$prefix/bin" --without-pam --disable-libsystemd 
+                --with-default-path="$prefix/bin" --with-pam --disable-libsystemd 
     make -j"$(nproc)"
     sudo make install
     perm_dir

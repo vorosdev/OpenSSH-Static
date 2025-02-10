@@ -85,8 +85,8 @@ EOF
   sudo make install OUTPUT="$OUTPUT"
 
   # Agregar los binarios al PATH 
-  echo "export PATH=\$PATH:$OUTPUT/bin" | sudo tee -a /etc/profile.d/musl.sh
-  source /etc/profile.d/musl.sh
+  echo "export PATH=\$PATH:$OUTPUT/bin" | tee -a $HOME/.bashrc
+  source $HOME/.bashrc || source $HOME/.profile
 
   echo "¡Entorno de compilación Musl para $arch instalado en $OUTPUT!"
   cd "$OLDPWD" || exit 1
