@@ -57,7 +57,7 @@ readonly OPENSSL_CHECKFILE="lib/libcrypto.a"
 OPENSSL_build() {
     ./Configure no-shared no-dso -static --prefix="$prefix" --openssldir="$prefix/ssl" # linux-generic32
     make -j"$(nproc)"
-    sudo make install#_sw
+    sudo make install_sw
     perm_dir
 }
 
@@ -75,7 +75,7 @@ OPENSSH_build() {
     LDFLAGS="-L$prefix/lib -L$prefix/lib64 -static"  \
     ./configure --prefix="$prefix" --exec-prefix="$prefix" --sysconfdir="$prefix/etc" \
                 --with-privsep-user=nobody --with-ssl-dir="$prefix" --with-zlib="$prefix" \
-                --with-default-path="$prefix/bin" --with-pam --disable-libsystemd 
+                --with-default-path="$prefix/bin" --without-pam --disable-libsystemd 
     make -j"$(nproc)"
     sudo make install
     perm_dir
@@ -122,18 +122,32 @@ build() {
     local name="$1"
     local version="$2"
     local dir="$3"
-    local tgz="$4"
+    local tar="$4"
     local url="$5"
     local checkfile="$6"
     local build_func="$7"
+    local algo=""
+
 
     if [ ! -f "$prefix/$checkfile" ]; then
         echo "---- Building $name $version ----"
         rm -rf "$build_dir/$dir"
-        if [ ! -f "$dist/$tgz" ]; then
-            curl --output "$dist/$tgz" --location "$url"
+        if [ ! -f "$dist/$tar" ]; then
+	   curl --max-time 60 --output "$dist/$tar" --location "$url"
         fi
-        tar -C "$build_dir" -xzf "$dist/$tgz"
+	case $tar in
+ 	 *tgz|*tar.gz) 
+           algo="-xzf"
+	  ;;
+  	 *tar.xz)
+           algo="-xJf"
+           ;;
+          *)
+           echo "Unsupported archive format: $tar"
+           return 1
+           ;;
+	esac
+        tar -C "$build_dir" "$algo" "$dist/$tar"
         pushd "$build_dir/$dir" >/dev/null
         # Execute the corresponding build function
         $build_func
@@ -151,4 +165,3 @@ build "OpenSSL" "$OPENSSL_VERSION" "$OPENSSL_DIR" "$OPENSSL_TGZ" "$OPENSSL_URL" 
 build "OpenSSH" "$OPENSSH_VERSION" "$OPENSSH_DIR" "$OPENSSH_TGZ" "$OPENSSH_URL" "$OPENSSH_CHECKFILE" OPENSSH_build
 
 echo "Everything done. Statically linked OpenSSH binaries are in $prefix/sbin"
-
