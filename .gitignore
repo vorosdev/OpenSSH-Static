@@ -1,1 +1,4 @@
 musl-cross-make
+dist
+root
+build

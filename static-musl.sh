@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+#set -euo pipefail
 
 #------------------------------------------------------------------------------
 # Versions
@@ -81,6 +81,7 @@ OPENSSH_build() {
     perm_dir
 }
 
+
 #------------------------------------------------------------------------------
 # User Prompt and Environment Setup
 #------------------------------------------------------------------------------
@@ -133,13 +134,14 @@ build() {
         echo "---- Building $name $version ----"
         rm -rf "$build_dir/$dir"
         if [ ! -f "$dist/$tar" ]; then
-	   curl --max-time 60 --output "$dist/$tar" --location "$url"
+    	   curl --fail --retry 3 --compressed --user-agent "Mozilla/5.0" --output "${dist}/${tar}" --location "${url}"
         fi
+
 	case $tar in
- 	 *tgz|*tar.gz) 
+ 	  *tgz|*tar.gz) 
            algo="-xzf"
-	  ;;
-  	 *tar.xz)
+	   ;;
+  	  *tar.xz)
            algo="-xJf"
            ;;
           *)
@@ -147,6 +149,7 @@ build() {
            return 1
            ;;
 	esac
+
         tar -C "$build_dir" "$algo" "$dist/$tar"
         pushd "$build_dir/$dir" >/dev/null
         # Execute the corresponding build function
